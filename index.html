@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sidebar — Coditas DS Component Showcase</title>
+
+<!-- React + Babel via CDN — fine for this copy/paste demo page.
+     For a real product, install the actual npm package + a build step
+     instead of Babel-in-browser (see the "Prompt" panel below). -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<style id="component-css">
+/* ═══════════════════════════════════════════════════════════════════
+   Coditas DS tokens — resolved values, so this file has zero external
+   dependencies. In the real design system these come from tokens.css.
+═══════════════════════════════════════════════════════════════════ */
+:root {
+  --sb-bg-card-header: #FAF9FF;
+  --sb-border-default: #EFF1FF;
+  --sb-text-heading:   #24246A;
+  --sb-text-muted:     #888888;
+  --sb-text-secondary: #6D6D6D;
+  --sb-text-body:      #262626;
+  --sb-purple-50:      #EFF1FF;
+  --sb-purple-100:     #E7E9FE;
+  --sb-purple-700:     #5D5DF6;
+  --sb-success-500:    #22C55E;
+  --sb-radius-lg:      12px;
+  --sb-radius-md:      8px;
+  --sb-radius-full:    9999px;
+  --sb-space-4:        4px;
+  --sb-space-8:        8px;
+  --sb-space-12:       12px;
+  --sb-space-16:       16px;
+  --sb-font: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ── Sidebar shell ─────────────────────────────────────────────────── */
+.sb-sidebar {
+  display: flex;
+  flex-direction: column;
+  background: var(--sb-bg-card-header);
+  border: 1px solid var(--sb-border-default);
+  border-radius: var(--sb-radius-lg);
+  overflow: hidden;
+  flex-shrink: 0;
+  font-family: var(--sb-font);
+  transition: width 200ms ease;
+}
+
+/* ── Header ────────────────────────────────────────────────────────── */
+.sb-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sb-space-8);
+  padding: 12px 14px 12px 16px;
+  border-bottom: 1px solid var(--sb-border-default);
+  flex-shrink: 0;
+  min-width: 0;
+}
+.sb-collapsedRoot .sb-header { justify-content: center; padding: 12px 8px; }
+
+.sb-brandText { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.sb-brandRow { display: flex; align-items: center; gap: var(--sb-space-8); min-width: 0; }
+.sb-appName {
+  font-size: 13px; font-weight: 700; color: var(--sb-text-heading);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sb-subtitle {
+  font-size: 11px; font-weight: 500; color: var(--sb-text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ── Nav list ──────────────────────────────────────────────────────── */
+.sb-nav { flex: 1; overflow-y: auto; overflow-x: hidden; padding: var(--sb-space-8) 10px; display: flex; flex-direction: column; gap: 2px; }
+.sb-sectionLabel {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--sb-text-muted); padding: 10px var(--sb-space-4) var(--sb-space-4); user-select: none;
+}
+.sb-navDivider { height: 1px; margin: var(--sb-space-4) var(--sb-space-4); background: var(--sb-border-default); flex-shrink: 0; }
+
+/* ── NavItem (recursive) ───────────────────────────────────────────── */
+.sb-navItemWrap { display: flex; flex-direction: column; }
+.sb-navItem {
+  position: relative; display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: var(--sb-radius-md); background: transparent;
+  cursor: pointer; transition: background 150ms ease; user-select: none; outline: none;
+}
+.sb-navItem.sb-collapsed { gap: 0; justify-content: center; padding: 9px 0; }
+.sb-navItem.sb-hovered { background: color-mix(in srgb, var(--sb-purple-700) 6%, transparent); }
+.sb-navItem.sb-active, .sb-navItem.sb-groupOpen { background: color-mix(in srgb, var(--sb-purple-700) 12%, transparent); }
+.sb-navItem.sb-active .sb-navIcon, .sb-navItem.sb-hovered .sb-navIcon, .sb-navItem.sb-groupOpen .sb-navIcon { color: var(--sb-purple-700); }
+.sb-navItem.sb-active .sb-navLabel, .sb-navItem.sb-hovered .sb-navLabel, .sb-navItem.sb-groupOpen .sb-navLabel { color: var(--sb-purple-700); }
+.sb-navItem.sb-active .sb-navLabel { font-weight: 600; }
+.sb-navItem.sb-focused { outline: 2px solid var(--sb-purple-700); outline-offset: 2px; }
+.sb-navItem.sb-disabled { cursor: not-allowed; opacity: 0.5; }
+.sb-navItem.sb-nested { padding-top: 6px; padding-bottom: 6px; }
+.sb-navItem.sb-nested .sb-navLabel { font-size: 12px; }
+
+.sb-activeBar { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 20px; border-radius: 2px; background: var(--sb-purple-700); }
+.sb-navIcon { flex-shrink: 0; color: var(--sb-text-secondary); transition: color 150ms ease; display: inline-flex; }
+.sb-navLabel {
+  flex: 1; font-size: 13px; font-weight: 500; color: var(--sb-text-body);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 150ms ease;
+}
+.sb-caret { flex-shrink: 0; color: var(--sb-text-muted); transition: transform 200ms ease, color 200ms ease; display: inline-flex; }
+.sb-caretOpen { transform: rotate(180deg); color: var(--sb-purple-700); }
+.sb-subItems { padding-left: 22px; margin-top: 2px; display: flex; flex-direction: column; gap: 2px; }
+
+/* ── Footer ────────────────────────────────────────────────────────── */
+.sb-divider { height: 1px; background: var(--sb-border-default); flex-shrink: 0; }
+.sb-footer { padding: 12px 14px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.sb-footerCollapsed { flex-direction: column; padding: 12px 8px; gap: 8px; }
+.sb-avatarWrap { position: relative; flex-shrink: 0; display: flex; }
+.sb-onlineDot { position: absolute; bottom: 0; right: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--sb-success-500); border: 1.5px solid var(--sb-bg-card-header); }
+.sb-userRow { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; }
+.sb-userInfo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
+.sb-userName { font-size: 12px; font-weight: 600; line-height: 1; color: var(--sb-text-heading); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.sb-userRole { font-size: 10px; line-height: 1; color: var(--sb-text-muted); }
+.sb-footerActions { flex-shrink: 0; display: flex; align-items: center; gap: 4px; }
+.sb-footerCollapsed .sb-footerActions { flex-direction: column; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-sidebar, .sb-navItem, .sb-navIcon, .sb-navLabel, .sb-caret { transition: none; }
+}
+
+/* ── Minimal Avatar ────────────────────────────────────────────────── */
+.sb-avatar {
+  border-radius: 18px; overflow: hidden; flex-shrink: 0;
+  background: var(--sb-purple-100); display: flex; align-items: center; justify-content: center;
+}
+.sb-avatar-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sb-avatar-initials { color: var(--sb-purple-700); font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; line-height: 1; }
+
+/* ── Minimal Badge ─────────────────────────────────────────────────── */
+.sb-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 7px; border-radius: var(--sb-radius-full);
+  font-size: 11px; font-weight: 600; line-height: 1.4; white-space: nowrap;
+}
+.sb-badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+/* ── Minimal Button (ghost, icon-only) ─────────────────────────────── */
+.sb-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; cursor: pointer; font-family: var(--sb-font); border-radius: var(--sb-radius-lg);
+  background: transparent; color: var(--sb-purple-700);
+  transition: background 150ms ease, color 150ms ease;
+}
+.sb-btn-sm.sb-btn-iconOnly { width: 32px; height: 32px; padding: 0; aspect-ratio: 1; }
+.sb-btn-ghost:hover { background: var(--sb-purple-50); }
+.sb-btn:focus-visible { outline: 2px solid var(--sb-purple-700); outline-offset: 2px; }
+
+/* ── Minimal Tooltip ───────────────────────────────────────────────── */
+.sb-tooltip-wrapper { position: relative; display: inline-flex; }
+.sb-tooltip-box {
+  position: absolute; z-index: 20; background: var(--sb-text-heading); color: #fff;
+  font-size: 11px; font-weight: 500; padding: 5px 9px; border-radius: 6px; white-space: nowrap;
+  pointer-events: none;
+}
+.sb-tooltip-top { bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); }
+.sb-tooltip-right { left: calc(100% + 8px); top: 50%; transform: translateY(-50%); }
+
+/* ── Page chrome (not part of the component) ──────────────────────── */
+body { margin: 0; font-family: var(--sb-font); background: #F4F4FA; color: var(--sb-text-body); }
+.page { max-width: 1160px; margin: 0 auto; padding: 40px 24px 80px; }
+.page h1 { font-size: 26px; color: var(--sb-text-heading); margin: 0 0 6px; }
+.page > p.lede { color: var(--sb-text-secondary); font-size: 14px; margin: 0 0 32px; max-width: 640px; line-height: 1.6; }
+.demo-shell {
+  display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-start;
+  background: linear-gradient(135deg, rgba(153,0,230,0.06), rgba(17,202,230,0.06));
+  border: 1px solid var(--sb-border-default); border-radius: 16px; padding: 24px; margin-bottom: 40px;
+}
+.controls { flex: 1 1 240px; min-width: 220px; background: #fff; border: 1px solid var(--sb-border-default); border-radius: 12px; padding: 16px; }
+.controls h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sb-text-muted); margin: 0 0 10px; }
+.controls label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--sb-text-body); margin-bottom: 8px; cursor: pointer; }
+.panels { display: flex; flex-direction: column; gap: 20px; }
+.panel { background: #fff; border: 1px solid var(--sb-border-default); border-radius: 12px; overflow: hidden; }
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 18px; border-bottom: 1px solid var(--sb-border-default); background: var(--sb-bg-card-header);
+}
+.panel-head h2 { font-size: 14px; margin: 0; color: var(--sb-text-heading); }
+.copy-btn {
+  font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 8px;
+  border: 1px solid var(--sb-border-default); background: #fff; color: var(--sb-purple-700); cursor: pointer;
+}
+.copy-btn:hover { background: var(--sb-purple-50); }
+.panel pre {
+  margin: 0; padding: 18px; overflow-x: auto; font-size: 12.5px; line-height: 1.6;
+  font-family: ui-monospace, Consolas, monospace; color: var(--sb-text-body); max-height: 420px; overflow-y: auto;
+}
+.panel.prompt pre { white-space: pre-wrap; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <h1>Sidebar</h1>
+  <p class="lede">
+    Coditas Design System — unified vertical navigation panel. Live, interactive demo below,
+    followed by copyable HTML / CSS / JS and a reuse prompt.
+  </p>
+
+  <div class="demo-shell">
+    <div class="controls">
+      <h3>Header</h3>
+      <label><input type="checkbox" id="ctl-logo" checked /> Show logo</label>
+      <label><input type="checkbox" id="ctl-subtitle" /> Show subtitle</label>
+      <label><input type="checkbox" id="ctl-version" /> Show version</label>
+      <h3 style="margin-top:16px">Footer</h3>
+      <label><input type="checkbox" id="ctl-user" checked /> Show user profile</label>
+      <label><input type="checkbox" id="ctl-logout" checked /> Show logout</label>
+      <label><input type="checkbox" id="ctl-switch" /> Show switch account</label>
+      <h3 style="margin-top:16px">Behavior</h3>
+      <label><input type="checkbox" id="ctl-collapsible" checked /> Collapsible</label>
+    </div>
+    <div id="root"></div>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-head"><h2>HTML</h2><button class="copy-btn" data-copy="html-code">Copy</button></div>
+      <pre id="html-code"></pre>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>CSS</h2><button class="copy-btn" data-copy="css-code">Copy</button></div>
+      <pre id="css-code"></pre>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>JS</h2><button class="copy-btn" data-copy="js-code">Copy</button></div>
+      <pre id="js-code"></pre>
+    </div>
+    <div class="panel prompt">
+      <div class="panel-head"><h2>Prompt</h2><button class="copy-btn" data-copy="prompt-code">Copy</button></div>
+      <pre id="prompt-code"></pre>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     Component + demo — React, transpiled in-browser by Babel.
+═══════════════════════════════════════════════════════════════ -->
+<script type="text/babel" id="component-js">
+const { useState } = React;
+
+/* ── Inline icons (stand-ins for @phosphor-icons/react in this demo) ── */
+function Icon({ size = 18, children, style }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={style}>
+      {children}
+    </svg>
+  )
+}
+const IconSidebarSimple = (p) => <Icon {...p}><rect x="3" y="4" width="18" height="16" rx="2.5"/><line x1="9.5" y1="4" x2="9.5" y2="20"/></Icon>
+const IconCaretDown     = (p) => <Icon {...p}><path d="M6 9l6 6 6-6"/></Icon>
+const IconSignOut       = (p) => <Icon {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></Icon>
+const IconUserSwitch    = (p) => <Icon {...p}><circle cx="9" cy="7" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M17 8l3-2.5L17 3"/><path d="M20 5.5h-5"/></Icon>
+const IconHouse         = (p) => <Icon {...p}><path d="M4 11l8-7 8 7"/><path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9"/></Icon>
+const IconFileText      = (p) => <Icon {...p}><path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M9 12h6M9 16h6"/></Icon>
+const IconChartLine     = (p) => <Icon {...p}><path d="M4 19V5"/><path d="M4 19h16"/><path d="M6 15l4-4 3 3 5-6"/></Icon>
+const IconUsers         = (p) => <Icon {...p}><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2c2.6.5 4.5 2.3 4.5 4.8"/></Icon>
+const IconGear          = (p) => <Icon {...p}><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 0 0-2-1.2L14 3h-4l-.4 2.5a7 7 0 0 0-2 1.2l-2.3-.9-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.3-.9c.6.5 1.3.9 2 1.2L10 21h4l.3-2.5c.7-.3 1.4-.7 2-1.2l2.3.9 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></Icon>
+const IconBookOpen      = (p) => <Icon {...p}><path d="M12 6c-1.5-1.3-4-2-7-2v13c3 0 5.5.7 7 2 1.5-1.3 4-2 7-2V4c-3 0-5.5.7-7 2z"/><path d="M12 6v13"/></Icon>
+const IconBell          = (p) => <Icon {...p}><path d="M6 10a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 5.5H4.5S6 14 6 10z"/><path d="M10 19a2 2 0 0 0 4 0"/></Icon>
+const IconSquaresFour   = (p) => <Icon {...p}><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></Icon>
+
+/* ── Minimal peer components (Avatar / Badge / Button / Tooltip) ──────
+   Simplified stand-ins matching the real Coditas DS components' API.
+   In production, use the real @coditas-llp/design-system versions —
+   see the "Prompt" panel for links to the source. ─────────────────── */
+function Avatar({ size = 32, initials, src, alt }) {
+  return (
+    <div className="sb-avatar" style={{ width: size, height: size, fontSize: size * 0.35 }}>
+      {src ? <img src={src} alt={alt} className="sb-avatar-img" /> : <span className="sb-avatar-initials">{initials || '?'}</span>}
+    </div>
+  )
+}
+
+function Badge({ children, variant = 'default', dot = false }) {
+  const variants = {
+    default: { bg: '#EFF1FF', color: '#5D5DF6' },
+    neutral: { bg: '#F6F6F6', color: '#5B5E61' },
+  }
+  const v = variants[variant] || variants.default
+  return (
+    <span className="sb-badge" style={{ background: v.bg, color: v.color }}>
+      {dot && <span className="sb-badge-dot" style={{ background: v.color }} />}
+      {children}
+    </span>
+  )
+}
+
+function Button({ children, iconOnly, variant = 'ghost', size = 'sm', onClick, className = '', ...rest }) {
+  return (
+    <button
+      type="button"
+      className={`sb-btn sb-btn-${variant} sb-btn-${size} ${iconOnly ? 'sb-btn-iconOnly' : ''} ${className}`}
+      onClick={onClick}
+      {...rest}
+    >
+      {children}
+    </button>
+  )
+}
+
+function Tooltip({ content, placement = 'top', children }) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <span
+      className="sb-tooltip-wrapper"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onBlur={() => setHovered(false)}
+    >
+      {children}
+      {hovered && <span className={`sb-tooltip-box sb-tooltip-${placement}`} role="tooltip">{content}</span>}
+    </span>
+  )
+}
+
+/* ── NavItem — recursive; an expandable item renders its own children ── */
+function NavItem({
+  icon: IconComp, label, badgeCount = null, pill = null, dot = false,
+  active = false, hovered = false, focused = false, disabled = false,
+  expandable = false, items = [], defaultOpen = false, collapsed = false,
+  nested = false, onClick,
+}) {
+  const [isHovered, setIsHovered] = useState(false)
+  const [open, setOpen] = useState(defaultOpen)
+  const effectiveHover = (hovered || isHovered) && !disabled
+
+  const handleActivate = () => {
+    if (disabled) return
+    if (expandable) { if (!collapsed) setOpen(o => !o); return }
+    onClick && onClick()
+  }
+
+  const cls = [
+    'sb-navItem',
+    active ? 'sb-active' : '',
+    effectiveHover ? 'sb-hovered' : '',
+    focused ? 'sb-focused' : '',
+    disabled ? 'sb-disabled' : '',
+    collapsed ? 'sb-collapsed' : '',
+    nested ? 'sb-nested' : '',
+    expandable && open && !collapsed ? 'sb-groupOpen' : '',
+  ].filter(Boolean).join(' ')
+
+  const row = (
+    <div
+      role={expandable ? 'button' : 'menuitem'}
+      aria-expanded={expandable ? open : undefined}
+      aria-current={!expandable && active ? 'page' : undefined}
+      aria-disabled={disabled || undefined}
+      tabIndex={disabled ? -1 : 0}
+      onClick={handleActivate}
+      onKeyDown={(e) => { if (!disabled && (e.key === 'Enter' || e.key === ' ')) handleActivate() }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={cls}
+    >
+      {active && !collapsed && !expandable && <div className="sb-activeBar" />}
+      {IconComp && <span className="sb-navIcon"><IconComp size={18} /></span>}
+      {!collapsed && <span className="sb-navLabel">{label}</span>}
+      {!collapsed && dot && <Badge dot variant={active ? 'default' : 'neutral'} />}
+      {!collapsed && badgeCount != null && <Badge variant="default">{badgeCount}</Badge>}
+      {!collapsed && pill && <Badge variant="default">{pill}</Badge>}
+      {!collapsed && expandable && <span className={`sb-caret ${open ? 'sb-caretOpen' : ''}`}><IconCaretDown size={14} /></span>}
+    </div>
+  )
+
+  return (
+    <div className="sb-navItemWrap">
+      {collapsed ? <Tooltip content={label} placement="right">{row}</Tooltip> : row}
+      {expandable && open && !collapsed && (
+        <div className="sb-subItems" role="group">
+          {items.map((child, i) => <NavItem key={child.label ?? i} {...child} nested collapsed={collapsed} />)}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function DefaultLogo({ size = 32 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="sb-logo-g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#9900E6" /><stop offset="100%" stopColor="#11CAE6" />
+        </linearGradient>
+      </defs>
+      <rect width="32" height="32" rx="8" fill="url(#sb-logo-g)" />
+      <path d="M22 16c0 3.314-2.686 6-6 6s-6-2.686-6-6 2.686-6 6-6" stroke="white" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+      <circle cx="22" cy="10" r="2.5" fill="white" />
+    </svg>
+  )
+}
+
+/* ── Sidebar — the one component; every difference is a property ─────── */
+function Sidebar({
+  items = [], width = 240, collapsedWidth = 72, height = 640,
+  logo, showLogo = true, appName = 'App',
+  showSubtitle = false, subtitle = null,
+  showVersion = false, version = null,
+  showUserProfile = false, user = null,
+  showLogout = false, onLogout,
+  showSwitchAccount = false, onSwitchAccount,
+  showDivider = true,
+  collapsible = false, collapsed: collapsedProp, defaultCollapsed = false, onCollapsedChange,
+  activeIndex, onSelect, className = '',
+}) {
+  const [internalIdx, setInternalIdx] = useState(0)
+  const activeIdx = activeIndex !== undefined ? activeIndex : internalIdx
+  const handleSelect = (idx) => { if (activeIndex === undefined) setInternalIdx(idx); onSelect && onSelect(idx) }
+
+  const [internalCollapsed, setInternalCollapsed] = useState(defaultCollapsed)
+  const collapsed = collapsedProp !== undefined ? collapsedProp : internalCollapsed
+  const toggleCollapsed = () => {
+    const next = !collapsed
+    if (collapsedProp === undefined) setInternalCollapsed(next)
+    onCollapsedChange && onCollapsedChange(next)
+  }
+
+  const hasFooter = showUserProfile || showLogout || showSwitchAccount
+  const effectiveWidth = collapsed ? collapsedWidth : width
+
+  return (
+    <aside aria-label="Main navigation" className={`sb-sidebar ${collapsed ? 'sb-collapsedRoot' : ''} ${className}`} style={{ width: effectiveWidth, height }}>
+      <div className="sb-header">
+        {showLogo && (logo || <DefaultLogo size={32} />)}
+        {!collapsed && (
+          <div className="sb-brandText">
+            <div className="sb-brandRow">
+              <span className="sb-appName">{appName}</span>
+              {showVersion && version && <Badge variant="neutral">{version}</Badge>}
+            </div>
+            {showSubtitle && subtitle && <span className="sb-subtitle">{subtitle}</span>}
+          </div>
+        )}
+        {collapsible && (
+          <Tooltip content={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} placement={collapsed ? 'right' : 'top'}>
+            <Button iconOnly variant="ghost" size="sm" onClick={toggleCollapsed} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+              <IconSidebarSimple size={16} />
+            </Button>
+          </Tooltip>
+        )}
+      </div>
+
+      <nav className="sb-nav" role="menu" aria-label={appName}>
+        {items.map((item, idx) => {
+          if (item.type === 'section') return collapsed ? null : <div key={'s' + idx} className="sb-sectionLabel">{item.label}</div>
+          if (item.type === 'divider') return <div key={'d' + idx} className="sb-navDivider" role="separator" />
+          return (
+            <NavItem
+              key={item.label}
+              icon={item.icon}
+              label={item.label}
+              badgeCount={item.badgeCount ?? null}
+              pill={item.pill ?? null}
+              dot={item.dot ?? false}
+              disabled={item.disabled}
+              expandable={item.expandable ?? false}
+              items={item.items ?? []}
+              defaultOpen={item.defaultOpen}
+              active={activeIdx === idx}
+              collapsed={collapsed}
+              onClick={() => !item.disabled && handleSelect(idx)}
+            />
+          )
+        })}
+      </nav>
+
+      {showDivider && hasFooter && <div className="sb-divider" />}
+
+      {hasFooter && (
+        <div className={`sb-footer ${collapsed ? 'sb-footerCollapsed' : ''}`}>
+          {showUserProfile && user && (
+            collapsed ? (
+              <Tooltip content={user.role ? `${user.name} · ${user.role}` : user.name} placement="right">
+                <div className="sb-avatarWrap">
+                  <Avatar size={32} initials={user.initials} src={user.avatarSrc} alt={user.name} />
+                  {user.online && <span className="sb-onlineDot" />}
+                </div>
+              </Tooltip>
+            ) : (
+              <div className="sb-userRow">
+                <div className="sb-avatarWrap">
+                  <Avatar size={32} initials={user.initials} src={user.avatarSrc} alt={user.name} />
+                  {user.online && <span className="sb-onlineDot" />}
+                </div>
+                <div className="sb-userInfo">
+                  <span className="sb-userName">{user.name}</span>
+                  {user.role && <span className="sb-userRole">{user.role}</span>}
+                </div>
+              </div>
+            )
+          )}
+          {(showSwitchAccount || showLogout) && (
+            <div className="sb-footerActions">
+              {showSwitchAccount && (
+                <Tooltip content="Switch account" placement={collapsed ? 'right' : 'top'}>
+                  <Button iconOnly variant="ghost" size="sm" onClick={onSwitchAccount} aria-label="Switch account"><IconUserSwitch size={16} /></Button>
+                </Tooltip>
+              )}
+              {showLogout && (
+                <Tooltip content="Logout" placement={collapsed ? 'right' : 'top'}>
+                  <Button iconOnly variant="ghost" size="sm" onClick={onLogout} aria-label="Logout"><IconSignOut size={16} /></Button>
+                </Tooltip>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </aside>
+  )
+}
+
+/* ── Demo composition, wired to the checkboxes on the page ────────────── */
+const DEMO_ITEMS = [
+  { type: 'section', label: 'Overview' },
+  { icon: IconSquaresFour, label: 'Dashboard' },
+  { type: 'section', label: 'Modules' },
+  { icon: IconFileText, label: 'Documents', badgeCount: 4 },
+  { icon: IconBookOpen, label: 'Policies', expandable: true, items: [
+      { label: 'HR Policy' }, { label: 'Leave Policy' }, { label: 'Code of Conduct' },
+    ] },
+  { icon: IconChartLine, label: 'Analytics', pill: 'New' },
+  { icon: IconBell, label: 'Alerts', dot: true },
+  { type: 'divider' },
+  { icon: IconGear, label: 'Settings' },
+  { icon: IconFileText, label: 'Billing', disabled: true },
+]
+const DEMO_USER = { name: 'Ashish G.', role: 'Designer', initials: 'AG', online: true }
+
+function Demo() {
+  const [showLogo, setShowLogo] = useState(true)
+  const [showSubtitle, setShowSubtitle] = useState(false)
+  const [showVersion, setShowVersion] = useState(false)
+  const [showUserProfile, setShowUserProfile] = useState(true)
+  const [showLogout, setShowLogout] = useState(true)
+  const [showSwitchAccount, setShowSwitchAccount] = useState(false)
+  const [collapsible, setCollapsible] = useState(true)
+  const [activeItem, setActiveItem] = useState(1)
+
+  // Wire the plain HTML checkboxes outside React into this component's state.
+  React.useEffect(() => {
+    const bind = (id, setter) => {
+      const el = document.getElementById(id)
+      const handler = (e) => setter(e.target.checked)
+      el.addEventListener('change', handler)
+      return () => el.removeEventListener('change', handler)
+    }
+    const offs = [
+      bind('ctl-logo', setShowLogo),
+      bind('ctl-subtitle', setShowSubtitle),
+      bind('ctl-version', setShowVersion),
+      bind('ctl-user', setShowUserProfile),
+      bind('ctl-logout', setShowLogout),
+      bind('ctl-switch', setShowSwitchAccount),
+      bind('ctl-collapsible', setCollapsible),
+    ]
+    return () => offs.forEach(off => off())
+  }, [])
+
+  return (
+    <Sidebar
+      appName="Product"
+      showLogo={showLogo}
+      showSubtitle={showSubtitle} subtitle="Governance Platform"
+      showVersion={showVersion} version="v1.2.37"
+      items={DEMO_ITEMS}
+      activeIndex={activeItem}
+      onSelect={setActiveItem}
+      showUserProfile={showUserProfile} user={DEMO_USER}
+      showLogout={showLogout} onLogout={() => alert('Logout clicked')}
+      showSwitchAccount={showSwitchAccount} onSwitchAccount={() => alert('Switch account clicked')}
+      showDivider
+      collapsible={collapsible}
+      height={560}
+    />
+  )
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />)
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     Copy-panel wiring — plain JS, no build step.
+═══════════════════════════════════════════════════════════════ -->
+<script>
+document.getElementById('css-code').textContent = document.getElementById('component-css').textContent.trim();
+document.getElementById('js-code').textContent = document.getElementById('component-js').textContent.trim();
+
+document.getElementById('html-code').textContent =
+`<!doctype html>
+<html>
+<head>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
+  <style>/* paste the CSS panel's contents here */</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    /* paste the JS panel's contents here, then:  */
+    ReactDOM.createRoot(document.getElementById('root')).render(<Demo />)
+  <\/script>
+</body>
+</html>`;
+
+document.getElementById('prompt-code').textContent =
+`Build a single "Sidebar" React component for a design system that every internal product consumes — no per-product forks.
+
+Structure:
+- Header: logo + app name, optional version badge, optional subtitle.
+- Nav: a list of items. An item can be a plain leaf (icon + label), a section heading, a divider, or "expandable" with its own nested items (recursive — no separate "NavGroup" component).
+- Footer: optional user identity (avatar + name + role, plain text) and up to two independent icon actions — Logout and Switch Account — each optional.
+
+The only structural variant is Expanded vs Collapsed (an icon-only rail with tooltips replacing labels). Everything else — logo, subtitle, version, user profile, logout, switch account, section headings, badges, pills, notification dots, dividers, nested items — must be a named boolean property or a data flag on the items array, never a second component or a second layout for the same purpose.
+
+Compose it only from existing design-system primitives: Avatar for the user photo/initials, Badge for numeric counts / text pills / notification dots, Button (icon-only, ghost variant) for Logout/Switch Account/the collapse trigger, Tooltip for their accessible labels. Use design tokens for color, spacing, and radius — no hardcoded one-off styles.
+
+Reference implementation (React + CSS Modules) and full prop API:
+https://github.com/coditas-llp/coditas-ds/tree/main/packages/ui/src/components/Sidebar
+Peer components used: Avatar, Badge, Button, Tooltip — same repo, /packages/ui/src/components/`;
+
+document.querySelectorAll('.copy-btn').forEach((btn) => {
+  btn.addEventListener('click', async () => {
+    const target = document.getElementById(btn.dataset.copy);
+    try {
+      await navigator.clipboard.writeText(target.textContent);
+      const original = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    } catch (err) {
+      console.error('Copy failed', err);
+    }
+  });
+});
+</script>
+</body>
+</html>
