@@ -521,7 +521,14 @@ function Sidebar({
   )
 }
 
-/* ── Demo composition, wired to the checkboxes on the page ────────────── */
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     Demo harness only — page-specific wiring (checkbox bindings, the
+     ReactDOM mount call). NOT part of the reusable component, and not
+     shown in the JS copy panel above.
+═══════════════════════════════════════════════════════════════ -->
+<script type="text/babel">
 const DEMO_ITEMS = [
   { type: 'section', label: 'Overview' },
   { icon: IconSquaresFour, label: 'Dashboard' },
