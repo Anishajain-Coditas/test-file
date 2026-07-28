@@ -174,7 +174,7 @@ body { margin: 0; font-family: var(--sb-font); background: #F4F4FA; color: var(-
   background: linear-gradient(135deg, rgba(153,0,230,0.06), rgba(17,202,230,0.06));
   border: 1px solid var(--sb-border-default); border-radius: 16px; padding: 24px; margin-bottom: 40px;
 }
-.controls { flex: 1 1 240px; min-width: 220px; background: #fff; border: 1px solid var(--sb-border-default); border-radius: 12px; padding: 16px; }
+.controls { flex: 0 0 auto; width: fit-content; background: #fff; border: 1px solid var(--sb-border-default); border-radius: 12px; padding: 16px; }
 .controls h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sb-text-muted); margin: 0 0 10px; }
 .controls label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--sb-text-body); margin-bottom: 8px; cursor: pointer; }
 .panels { display: flex; flex-direction: column; gap: 20px; }
@@ -206,6 +206,7 @@ body { margin: 0; font-family: var(--sb-font); background: #F4F4FA; color: var(-
   </p>
 
   <div class="demo-shell">
+    <div id="root"></div>
     <div class="controls">
       <h3>Header</h3>
       <label><input type="checkbox" id="ctl-logo" checked /> Show logo</label>
@@ -218,7 +219,6 @@ body { margin: 0; font-family: var(--sb-font); background: #F4F4FA; color: var(-
       <h3 style="margin-top:16px">Behavior</h3>
       <label><input type="checkbox" id="ctl-collapsible" checked /> Collapsible</label>
     </div>
-    <div id="root"></div>
   </div>
 
   <div class="panels">
